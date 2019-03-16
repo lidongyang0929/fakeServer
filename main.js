@@ -1,66 +1,71 @@
 fakeData()
-let model = {
-  data:{
-    name:'',
-    number:0,
-    id:'',
-  },
-  fetch(id){
-    return axios.get(`/books/${id}`).then((response)=>{
-      this.data = response.data
-      return response
-    })
-  },
-  update(data){
-    let id= this.data.id
-    return axios.put(`/books/${id}`,data).then((response)=>{
-      this.data = response.data
-      return response
+function Model(options){
+    this.data = options.data
+    this.resource = options.resource
+  }
+  Model.prototype.fetch = function(id){
+    return axios.get(`/${this.resource}s/${id}`).then((response)=>{
+        this.data = response.data
+        return response
+      })
+  }
+  Model.prototype.update = function(data){
+     let id= this.data.id
+      return axios.put(`/${this.resource}s/${id}`,data).then((response)=>{
+        this.data = response.data
+        return response
+    })}
+  function View({el,template}){
+    this.el = el
+    this.template = template
+  }
+ View.prototype.render = function(data){
+   let html = this.template
+   for(let key in data){
+     html = html.replace(`__${key}__`,data[key])
+   }
+   $(this.el).html(html)
+ }
+// ---------------- 以上是MVC类
+
+ let model = new Model({data:{name:'',number:0,id:''},resource:'book'})
+ let view = new View({
+   el: '#app',
+   template: `
+   <div>
+   名字:__name__
+   数量:<span id=number>__number__</span>
+   </div>
+   <div>
+     <button id=addOne>加一</button>
+     <button id=minusOne>减一</button>
+   </div>`
   })
-  
-}}
-let view = {
-  el: '#app',
-  template: `
-  <div>
-  名字:__name__
-  数量:<span id=number>__number__</span>
-  </div>
-  <div>
-  <button id=addOne>加一</button>
-  <button id=minusOne>减一</button>
-  </div>`,
-  render(data){
-  let html = this.template.replace('__name__',data.name)
-  .replace('__number__',data.number)
-  $(this.el).html(html)
-}
-}
 let controller = {
   init({view,model}){
     this.view = view
     this.model = model
     this.view.render(this.model.data)
-    this.bindEvents()
-    this.model.fetch(1).then(({data})=>{
-     view.render(data)
+    this.model.fetch(1).then(()=>{
+     this.view.render(this.model.data)
     })
+    this.bindEvents()
   },
   bindEvents(){
     $(this.view.el).on('click','#addOne',this.addOne.bind(this)) 
     $(this.view.el).on('click','#minusOne',this.minusOne.bind(this)) 
   },                  
     addOne(){
-    let oldNumber = $('#number').text()
-    let newNumber = oldNumber -0 + 1
+    var oldNumber = $('#number').text()
+    var newNumber = oldNumber - 0 + 1
     this.model.update({number: newNumber}).then((response)=>{
         this.view.render(this.model.data)
       })
     },
     minusOne(){
-    let oldNumber = $('#number').text()
-    let newNumber = oldNumber -0 -1
-    this.model.update({number: newNumber}).then((response)=>{
+    var oldNumber = $('#number').text()
+    var newNumber = oldNumber -0 -1
+    this.model.update({number: newNumber}).then(()=>{
         this.view.render(this.model.data)
       })
     }}
